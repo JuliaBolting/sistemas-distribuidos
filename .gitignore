@@ -15,7 +15,7 @@ results/
 .DS_Store
 Thumbs.db
 
-# Configurações de IDE/editor (opcional, se você usar VSCode, PyCharm, etc.)
+# Configurações de IDE/editor 
 .vscode/
 .idea/
 *.sublime-workspace
