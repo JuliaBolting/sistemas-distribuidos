@@ -1,0 +1,22 @@
+# Python cache e arquivos compilados
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Diretórios de resultados
+results/
+
+# Arquivos temporários e logs
+*.log
+*.tmp
+*.bak
+
+# Arquivos de sistema
+.DS_Store
+Thumbs.db
+
+# Configurações de IDE/editor (opcional, se você usar VSCode, PyCharm, etc.)
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
