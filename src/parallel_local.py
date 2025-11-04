@@ -24,6 +24,7 @@ def multiplicar_linha(args):
             resultado_linha[j] += linha[k] * matrizB[k][j]
     return (idx, resultado_linha)
 
+# Não está sendo utilizada pois a função otimizada é preferida
 def multiplicacao_paralela_local(matA, matB, num_workers):
     # Multiplicação de matrizes em paralelo usando ProcessPoolExecutor
     n = len(matA)
@@ -35,6 +36,7 @@ def multiplicacao_paralela_local(matA, matB, num_workers):
             matC[idx] = linha_resultante
 
     return matC
+
 
 def main():
     parser = argparse.ArgumentParser()
@@ -48,10 +50,10 @@ def main():
     # Carregar matrizes
     matA = []
     matB = []
-    with open(f"{args.matdir}/matA_linear.txt", "r") as f:
+    with open(f"{args.matdir}/matA.txt", "r") as f:
         for linha in f:
             matA.append([float(x) for x in linha.strip().split()])
-    with open(f"{args.matdir}/matB_linear.txt", "r") as f:
+    with open(f"{args.matdir}/matB.txt", "r") as f:
         for linha in f:
             matB.append([float(x) for x in linha.strip().split()])
 
@@ -84,7 +86,18 @@ def main():
     print("Multiplicação local paralela concluída.")
     print("Workers:", num_workers)
     print("Tempo (clock):", tempo_clock, "CPU:", tempo_cpu)
+    horas = int(tempo_clock // 3600)
+    minutos = int((tempo_clock % 3600) // 60)
+    segundos = tempo_clock % 60
+    print(f"Tempo real: {horas}h {minutos}min {segundos:.2f}s")
     print("Hash:", h)
+    hash_result = f"{args.outdir}/hash_result.txt"
+    with open(hash_result, "r") as f:
+        expected_hash = f.read().strip()
+    if h == expected_hash:
+        print("Hash confere com o esperado.")
+    else:
+        print("Hash NÃO confere com o esperado.")
 
 if __name__ == "__main__":
     main()
