@@ -1,6 +1,8 @@
 import argparse
 import Pyro5.api
 from pathlib import Path
+from benchmark import run_benchmark
+
 
 @Pyro5.api.expose
 class CalculadoraMatriz(object):
@@ -34,6 +36,16 @@ def main():
     parser.add_argument("--ns-host", default=None, help="host do nameserver Pyro (se houver)")
     args = parser.parse_args()
 
+    results_dir = Path("results")
+    results_dir.mkdir(exist_ok=True)
+    bench_path = results_dir / "benchmarks.csv"
+
+    if not bench_path.exists():
+        print("Executando benchmark desta máquina antes de iniciar o servidor...")
+        run_benchmark()
+    else:
+        print("Benchmark já existente — pulando execução.")
+   
     # Criar daemon
     daemon = Pyro5.server.Daemon(host=args.host, port=args.port)
     uri = daemon.register(CalculadoraMatriz)
