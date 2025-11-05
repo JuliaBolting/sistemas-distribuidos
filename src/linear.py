@@ -2,6 +2,7 @@ import argparse
 from pathlib import Path
 from src.utils.hash_check import sha256_of_file, save_hash
 from src.utils.timer import TemporizadorSimples, adicionar_log, agora_ts
+from benchmark import run_benchmark
 
 def truncar_4digitos(matriz):
     # Trunca valores da matriz para 4 casas decimais
@@ -24,6 +25,7 @@ def multiplicacao_linear_for(matA, matB):
     return resultado
 
 def main():
+    run_benchmark()
     parser = argparse.ArgumentParser()
     parser.add_argument("--matdir", default="data", help="Diretório das matrizes")
     parser.add_argument("--outdir", default="results", help="Diretório de saída")
@@ -52,9 +54,11 @@ def main():
 
     # Salvar matriz resultante
     path_matC = f"{args.outdir}/matC.txt"
-    with open(path_matC, "w") as f:
-        for linha in matC:
-            f.write(" ".join(f"{valor:.4f}" for valor in linha) + "\n")
+    with open(path_matC, "w", encoding="utf8", newline="\n") as f:
+        for i, linha in enumerate(matC):
+            f.write(" ".join(f"{valor:.4f}" for valor in linha))
+            if i != len(matC) - 1:  # só quebra linha se NÃO for a última
+                f.write("\n")
 
     # Calcular hash e salvar
     h = sha256_of_file(path_matC)
