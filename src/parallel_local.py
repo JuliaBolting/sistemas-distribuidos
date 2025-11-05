@@ -4,6 +4,7 @@ from concurrent.futures import ProcessPoolExecutor
 import multiprocessing
 from src.utils.hash_check import sha256_of_file, save_hash
 from src.utils.timer import TemporizadorSimples, adicionar_log, agora_ts
+from benchmark import run_benchmark
 
 def truncar_4digitos(matriz):
     # Trunca valores da matriz para 4 casas decimais
@@ -39,6 +40,7 @@ def multiplicacao_paralela_local(matA, matB, num_workers):
 
 
 def main():
+    run_benchmark()
     parser = argparse.ArgumentParser()
     parser.add_argument("--matdir", default="data", help="Diretório das matrizes")
     parser.add_argument("--outdir", default="results", help="Diretório de saída")
