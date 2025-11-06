@@ -1,7 +1,6 @@
 import argparse
 import Pyro5.api
 from pathlib import Path
-from benchmark import run_benchmark
 
 
 @Pyro5.api.expose
@@ -29,29 +28,32 @@ class CalculadoraMatriz(object):
         return resultado
 
 def main():
+    print("Iniciando servidor de cálculo de matrizes...")
     parser = argparse.ArgumentParser()
     parser.add_argument("--host", default="localhost", help="host para vincular o daemon Pyro")
     parser.add_argument("--port", type=int, default=0, help="porta do daemon (0=auto)")
     parser.add_argument("--name", required=True, help="nome Pyro para registrar (único por servidor)")
-    parser.add_argument("--ns-host", default=None, help="host do nameserver Pyro (se houver)")
+    parser.add_argument("--ns-host", default="192.168.1.2", help="host do nameserver Pyro (se houver)")
     args = parser.parse_args()
+    print(args.ns_host)
 
     results_dir = Path("results")
     results_dir.mkdir(exist_ok=True)
     bench_path = results_dir / "benchmarks.csv"
 
     if not bench_path.exists():
-        print("Executando benchmark desta máquina antes de iniciar o servidor...")
-        run_benchmark()
+        print("Benchmark não encontrado — pulando execução automática. (Execute o benchmark separadamente se desejar.)")
     else:
         print("Benchmark já existente — pulando execução.")
    
     # Criar daemon
     daemon = Pyro5.server.Daemon(host=args.host, port=args.port)
-    uri = daemon.register(CalculadoraMatriz)
+    print(args.ns_host)
 
     if args.ns_host:
+        print(f"Conectando ao nameserver em {args.ns_host}...")
         ns = Pyro5.api.locate_ns(host=args.ns_host)
+        uri = daemon.register(CalculadoraMatriz())
         ns.register(args.name, uri)
         print(f"Nome registrado {args.name} -> {uri} no nameserver {args.ns_host}")
     else:

@@ -95,36 +95,45 @@ def bench_gemm(n: int, dtype=np.float64, repeats: int = 3) -> dict:
     gflops = flops / dt / 1e9
     return {"n": n, "dtype": str(dtype), "time_s": dt, "gflops": gflops}
 
-rows = []
+def run_benchmark():
+    """Run the benchmark suite and save results to results/benchmarks.csv.
+    This function performs CPU and GEMM tests and writes the rows.
+    Calling this at import time is intentionally avoided; call it explicitly when needed.
+    """
+    rows = []
 
-res_i = bench_scalar_int(total_ops=30_000_000)
-rows.append({
-    "timestamp": STAMP, "host": HOST, "cpu": CPU_INFO, "python": PY_INFO,
-    "section": "scalar", "metric": "int_ops_per_s","dtype": "int","n": "",
-    "iters": res_i["ops"], "time_s": f"{res_i['time_s']:.6f}",
-    "value": f"{res_i['ops_per_s']:.3f}", "notes": f"threads={FIX_THREADS or 'auto'}"
-})
+    res_i = bench_scalar_int(total_ops=30_000_000)
+    rows.append({
+        "timestamp": STAMP, "host": HOST, "cpu": CPU_INFO, "python": PY_INFO,
+        "section": "scalar", "metric": "int_ops_per_s","dtype": "int","n": "",
+        "iters": res_i["ops"], "time_s": f"{res_i['time_s']:.6f}",
+        "value": f"{res_i['ops_per_s']:.3f}", "notes": f"threads={FIX_THREADS or 'auto'}"
+    })
 
-res_f = bench_scalar_float(total_ops=30_000_000)
-rows.append({
-    "timestamp": STAMP, "host": HOST, "cpu": CPU_INFO, "python": PY_INFO,
-    "section": "scalar", "metric": "float_ops_per_s","dtype": "float","n": "",
-    "iters": res_f["ops"], "time_s": f"{res_f['time_s']:.6f}",
-    "value": f"{res_f['ops_per_s']:.3f}", "notes": f"threads={FIX_THREADS or 'auto'}"
-})
+    res_f = bench_scalar_float(total_ops=30_000_000)
+    rows.append({
+        "timestamp": STAMP, "host": HOST, "cpu": CPU_INFO, "python": PY_INFO,
+        "section": "scalar", "metric": "float_ops_per_s","dtype": "float","n": "",
+        "iters": res_f["ops"], "time_s": f"{res_f['time_s']:.6f}",
+        "value": f"{res_f['ops_per_s']:.3f}", "notes": f"threads={FIX_THREADS or 'auto'}"
+    })
 
-for dtype in (np.float32, np.float64):
-    for n in (256, 512, 1024, 1536):
-        r = bench_gemm(n=n, dtype=dtype, repeats=3)
-        rows.append({
-            "timestamp": STAMP, "host": HOST, "cpu": CPU_INFO, "python": PY_INFO,
-            "section": "gemm", "metric": "gflops","dtype": "float32" if dtype==np.float32 else "float64",
-            "n": n, "iters": "", "time_s": f"{r['time_s']:.6f}",
-            "value": f"{r['gflops']:.3f}", "notes": f"threads={FIX_THREADS or 'auto'}"
-        })
+    for dtype in (np.float32, np.float64):
+        for n in (256, 512, 1024, 1536):
+            r = bench_gemm(n=n, dtype=dtype, repeats=3)
+            rows.append({
+                "timestamp": STAMP, "host": HOST, "cpu": CPU_INFO, "python": PY_INFO,
+                "section": "gemm", "metric": "gflops","dtype": "float32" if dtype==np.float32 else "float64",
+                "n": n, "iters": "", "time_s": f"{r['time_s']:.6f}",
+                "value": f"{r['gflops']:.3f}", "notes": f"threads={FIX_THREADS or 'auto'}"
+            })
 
-write_rows(rows)
+    write_rows(rows)
 
-print(f"[OK] Benchmark salvo em: {OUT_CSV}")
-for r in rows:
-    print(r)
+    print(f"[OK] Benchmark salvo em: {OUT_CSV}")
+    for r in rows:
+        print(r)
+
+
+if __name__ == "__main__":
+    run_benchmark()

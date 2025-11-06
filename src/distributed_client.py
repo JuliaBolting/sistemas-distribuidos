@@ -1,9 +1,32 @@
 import argparse
 import time
 from pathlib import Path
+from weakref import proxy
 import Pyro5.api
-from src.utils.hash_check import sha256_of_file, save_hash
-from src.utils.timer import SimpleTimer, append_log, now_ts
+import numpy as np
+import csv
+import sys
+from os.path import dirname, join, abspath
+sys.path.insert(0, abspath(dirname(dirname(__file__))))
+from utils.hash_check import sha256_of_file, save_hash
+
+def agora_ts():
+    # Retorna timestamp atual formatado como YYYY-MM-DD HH:MM:SS
+    return time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+
+def adicionar_log(caminho_csv, linha, cabecalho=None):
+    
+    # Adiciona uma linha em arquivo CSV.
+    # Se o arquivo não existir e cabecalho for fornecido, escreve o cabeçalho primeiro.
+    
+    p = Path(caminho_csv)
+    p.parent.mkdir(parents=True, exist_ok=True)
+    escrever_cabecalho = not p.exists()
+    with open(p, "a", newline="", encoding="utf8") as f:
+        escritor = csv.writer(f)
+        if escrever_cabecalho and cabecalho:
+            escritor.writerow(cabecalho)
+        escritor.writerow(linha)
 
 def truncar4_array(arr):
     # Trunca valores de uma matriz para 4 casas decimais
@@ -35,10 +58,10 @@ def multiplicar_matriz_for(linhas_A, matriz_B):
     return resultado
 
 def multiplicacao_distribuida(matA, matB, uris_backends):
-    """
-    uris_backends: lista de URIs Pyro (strings)
-    retorna matC, estatísticas (clock, cpu, comunicação)
-    """
+    
+    # uris_backends: lista de URIs Pyro (strings)
+    # retorna matC, estatísticas (clock, cpu, comunicação)
+    
     num_servidores = len(uris_backends)
     blocos = dividir_blocos(matA, num_servidores)
 
@@ -46,22 +69,27 @@ def multiplicacao_distribuida(matA, matB, uris_backends):
     tempo_total_comunicacao = 0.0
     tempo_total_computacao = 0.0
 
-    resultados_blocos = [None] * num_servidores
+    resultados_blocos = [None] * len(uris_backends)
 
     # medimos tempo total da operação
-    temporizador_global = SimpleTimer()
-    temporizador_global.start()
+    inicio_clock = time.time()
+    inicio_cpu = time.process_time()
 
     for i, uri in enumerate(uris_backends):
+        print(f"\tConectando ao servidor {uri}...")
         proxy = Pyro5.api.Proxy(uri)
         # envia bloco e matB para cálculo remoto
+        print(f"\tEnviando bloco {i} para servidor {uri}...")
         inicio_chamada = time.time()
-        res = proxy.multiply_rows(blocos[i], matB)
+        res = proxy.multiplicar_linhas(blocos[i], matB)
         fim_chamada = time.time()
         tempo_total_comunicacao += (fim_chamada - inicio_chamada)
         resultados_blocos[i] = res  # já é lista de listas
 
-    tempo_clock, tempo_cpu = temporizador_global.stop()
+    fim_clock = time.time()
+    fim_cpu = time.process_time()
+    tempo_clock = fim_clock - inicio_clock
+    tempo_cpu = fim_cpu - inicio_cpu
 
     # juntar resultados
     matC = []
@@ -71,12 +99,22 @@ def multiplicacao_distribuida(matA, matB, uris_backends):
     return matC, tempo_clock, tempo_cpu, tempo_total_comunicacao
 
 def main():
+    servers = [
+        "PYRONAME:NameServer@192.168.1.2"
+        #"PYRONAME:NameServer@10.151.56.46"
+        #"PYRONAME:NameServer@192.168.1.10",
+    ]
     parser = argparse.ArgumentParser()
     parser.add_argument("--matdir", default="data", help="diretório das matrizes")
     parser.add_argument("--outdir", default="results", help="diretório de saída")
     parser.add_argument("--backends", nargs="+", required=True, help="lista de URIs Pyro backend ou PYRONAME:...")
-    parser.add_argument("--ns-host", default=None, help="host do nameserver Pyro (opcional)")
+    parser.add_argument("--ns-host", default="192.168.1.2", help="host do nameserver Pyro (opcional)")
     args = parser.parse_args()
+
+    try:
+        Pyro5.config.NS_HOST = args.ns_host
+    except Exception:
+        pass
 
     Path(args.outdir).mkdir(parents=True, exist_ok=True)
 
@@ -89,7 +127,7 @@ def main():
     with open(f"{args.matdir}/matB.txt", "r") as f:
         for linha in f:
             B.append([float(x) for x in linha.strip().split()])
-
+            
     # Resolver URIs backend e multiplicação distribuída
     matC, tempo_clock, tempo_cpu, tempo_comunicacao = multiplicacao_distribuida(A, B, args.backends)
 
@@ -107,8 +145,8 @@ def main():
 
     # Salvar log
     cabecalho = ["modo","num_processos","tempo_clock","tempo_cpu","tempo_comunicacao","tempo_total","timestamp","notas"]
-    linha_log = ["distribuido", len(args.backends), f"{tempo_clock:.6f}", f"{tempo_cpu:.6f}", f"{tempo_comunicacao:.6f}", f"{tempo_clock:.6f}", now_ts(), ""]
-    append_log(f"{args.outdir}/run_logs.csv", linha_log, cabecalho)
+    linha_log = ["distribuido", len(args.backends), f"{tempo_clock:.6f}", f"{tempo_cpu:.6f}", f"{tempo_comunicacao:.6f}", f"{tempo_clock:.6f}", agora_ts(), ""]
+    adicionar_log(f"{args.outdir}/run_logs.csv", linha_log, cabecalho)
 
     print("Multiplicação distribuída concluída.")
     print("Backends:", args.backends)
