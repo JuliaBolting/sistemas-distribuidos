@@ -104,6 +104,7 @@ def main():
         #"PYRONAME:NameServer@10.151.56.46"
         #"PYRONAME:NameServer@192.168.1.10",
     ]
+    
     parser = argparse.ArgumentParser()
     parser.add_argument("--matdir", default="data", help="diretório das matrizes")
     parser.add_argument("--outdir", default="results", help="diretório de saída")
