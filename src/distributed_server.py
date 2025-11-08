@@ -1,7 +1,7 @@
 import argparse
 import Pyro5.api
 from pathlib import Path
-
+from benchmark import run_benchmark
 
 @Pyro5.api.expose
 class CalculadoraMatriz(object):
@@ -28,6 +28,7 @@ class CalculadoraMatriz(object):
         return resultado
 
 def main():
+    run_benchmark()
     print("Iniciando servidor de cálculo de matrizes...")
     parser = argparse.ArgumentParser()
     parser.add_argument("--host", default="localhost", help="host para vincular o daemon Pyro")
