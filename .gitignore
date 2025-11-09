@@ -7,6 +7,9 @@ data/matB.txt
 
 # Diretórios de resultados
 results/
+venv/
+resultado.csv
+
 
 # Arquivos temporários e logs
 *.log
