@@ -34,14 +34,21 @@ def multiplicar_linha(args):
             resultado_linha[j] += linha[k] * matrizB[k][j]
     return (idx, resultado_linha)
 
+
 def multiplicacao_paralela_local(matA, matB, num_workers):
     # Multiplicação de matrizes em paralelo usando ProcessPoolExecutor
     # Cada processo calcula uma linha inteira da matriz C
     n = len(matA)
     matC = [[0.0 for _ in range(len(matB[0]))] for _ in range(n)]
 
+    # Mapeamento: Distribuir as subtarefas para os processos
     with ProcessPoolExecutor(max_workers=num_workers) as executor:
+        
+        # Decomposição: Quebrar o problema em subtarefas independentes por linha
+        # Aglomeração: agrupar todos os elementos da mesma linha em uma única tarefa
         argumentos = [(i, matA[i], matB) for i in range(n)]
+        
+        # Comunicação: Distribuir as subtarefas entre os processos e recolher os resultados
         for idx, linha_resultante in executor.map(multiplicar_linha, argumentos):
             matC[idx] = linha_resultante
 
@@ -67,6 +74,7 @@ def main():
         for linha in f:
             matB.append([float(x) for x in linha.strip().split()])
 
+    # Mapeamento: Definir número de workers
     num_workers = args.workers or multiprocessing.cpu_count()
 
     # Multiplicação paralela e medição de tempo
