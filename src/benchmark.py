@@ -4,6 +4,11 @@ from pathlib import Path
 from datetime import datetime
 import numpy as np
 
+# Benchmark: mede o desempenho do computador em:
+# Operações escalares com inteiros
+# Operações escalares com ponto flutuante (float)
+# Multiplicação de matrizes (operações de álgebra linear - GFLOPS)
+
 OUT_DIR = Path("results")
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 OUT_CSV = OUT_DIR / "benchmarks.csv"
@@ -34,6 +39,7 @@ def write_rows(rows):
         for r in rows:
             w.writerow(r)
 
+# Executa uma função 3 vezes e pega o tempo do meio (para reduzir influência de ruídos/perfis de execução)
 def median_time(fn, repeats=3):
     times = []
     for _ in range(repeats):
@@ -42,6 +48,7 @@ def median_time(fn, repeats=3):
         times.append(time.perf_counter() - t0)
     return sorted(times)[len(times)//2]
 
+# Mede quantas operações por segundo o Python suporta com inteiros
 def bench_scalar_int(total_ops: int = 500_000) -> dict:
     a, b = 1, 3
     iters = total_ops // 3
@@ -59,6 +66,7 @@ def bench_scalar_int(total_ops: int = 500_000) -> dict:
     dt = median_time(run)
     return {"ops": iters*3, "time_s": dt}
 
+# Mede desempenho do Python com números de ponto flutuante
 def bench_scalar_float(total_ops: int = 5_000_000) -> dict:
     a, b = 1.0, math.pi
     iters = total_ops // 3
@@ -72,6 +80,7 @@ def bench_scalar_float(total_ops: int = 5_000_000) -> dict:
     dt = median_time(run)
     return {"ops": iters*3, "time_s": dt}
 
+# Mede desempenho em multiplicação de matrizes com float (GEMM)
 def bench_gemm(n: int, dtype=np.float64) -> dict:
     A = np.random.rand(n, n).astype(dtype)
     B = np.random.rand(n, n).astype(dtype)

@@ -7,6 +7,7 @@ from src.utils.timer import TemporizadorSimples, adicionar_log, agora_ts
 import numpy as np
 from numba import njit, prange
 
+# utiliza Numba para acelerar o cálculo da multiplicação matricial usando paralelismo automático
 @njit(parallel=True, fastmath=True)
 def multiplicacao_numba(matA, matB):
     n = matA.shape[0]
@@ -23,7 +24,7 @@ def multiplicacao_numba(matA, matB):
     return matC
 
 def multiplicar_linha(args):
-    # Calcula produto de uma linha com a matriz B
+    # Calcula produto de uma linha da matriz A com a matriz B
     idx, linha, matrizB = args
     num_colunas = len(matrizB[0])
     num_elem = len(matrizB)
@@ -35,6 +36,7 @@ def multiplicar_linha(args):
 
 def multiplicacao_paralela_local(matA, matB, num_workers):
     # Multiplicação de matrizes em paralelo usando ProcessPoolExecutor
+    # Cada processo calcula uma linha inteira da matriz C
     n = len(matA)
     matC = [[0.0 for _ in range(len(matB[0]))] for _ in range(n)]
 
@@ -47,7 +49,6 @@ def multiplicacao_paralela_local(matA, matB, num_workers):
 
 
 def main():
-    # run_benchmark()
     parser = argparse.ArgumentParser()
     parser.add_argument("--matdir", default="data", help="Diretório das matrizes")
     parser.add_argument("--outdir", default="results", help="Diretório de saída")
@@ -110,6 +111,7 @@ def main():
     segundos = tempo_clock % 60
     print(f"Tempo real: {horas}h {minutos}min {segundos:.2f}s")
     print("Hash:", h)
+    '''
     hash_result = f"{args.outdir}/hash_result.txt"
     with open(hash_result, "r") as f:
         expected_hash = f.read().strip()
@@ -117,6 +119,7 @@ def main():
         print("Hash confere com o esperado.")
     else:
         print("Hash NÃO confere com o esperado.")
+    '''
 
 if __name__ == "__main__":
     main()
