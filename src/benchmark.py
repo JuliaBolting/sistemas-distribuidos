@@ -108,7 +108,7 @@ def run_benchmark():
     print("  Ops/s:", f["ops"]/f["time_s"])
 
     # GEMM FLOAT64 — tamanhos menores e mais rápidos
-    for n in (256, 512):
+    for n in (2048, 4096):
         print(f"-> GEMM: n={n}, dtype=float64")
         r = bench_gemm(n=n)
         rows.append({
