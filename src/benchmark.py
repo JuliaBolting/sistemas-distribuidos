@@ -9,11 +9,13 @@ import numpy as np
 # Operações escalares com ponto flutuante (float)
 # Multiplicação de matrizes (operações de álgebra linear - GFLOPS)
 
+#Criação da pasta (results) onde os resultados estão salvos. 
 OUT_DIR = Path("results")
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 OUT_CSV = OUT_DIR / "benchmarks.csv"
 
 # Fixar número de threads para tornar comparável entre hosts
+#Permite comparar as nossas máquinas que possuem diferentes núcleos. 
 os.environ["OMP_NUM_THREADS"] = "1"
 os.environ["OPENBLAS_NUM_THREADS"] = "1"
 os.environ["MKL_NUM_THREADS"] = "1"
@@ -21,11 +23,13 @@ os.environ["BLIS_NUM_THREADS"] = "1"
 os.environ["VECLIB_MAXIMUM_THREADS"] = "1"
 os.environ["NUMEXPR_NUM_THREADS"] = "1"
 
+#Registra do nome da maquina, CPU, versão do python e timestamp para registar no csv. 
 HOST = socket.gethostname()
 STAMP = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 CPU_INFO = platform.processor() or platform.machine()
 PY_INFO = platform.python_version()
 
+#Gravar os resultados no csv. 
 def write_rows(rows):
     header = [
         "timestamp","host","cpu","python","section","metric","dtype","n",
@@ -39,7 +43,7 @@ def write_rows(rows):
         for r in rows:
             w.writerow(r)
 
-# Executa uma função 3 vezes e pega o tempo do meio (para reduzir influência de ruídos/perfis de execução)
+# Executa uma função 3 vezes e pega o tempo do meio. 
 def median_time(fn, repeats=3):
     times = []
     for _ in range(repeats):
@@ -51,7 +55,7 @@ def median_time(fn, repeats=3):
 # Mede quantas operações por segundo o Python suporta com inteiros
 def bench_scalar_int(total_ops: int = 500_000) -> dict:
     a, b = 1, 3
-    iters = total_ops // 3
+    iters = total_ops // 3 #divide por 3 pois cada iteração faz 3 operações (+, -, *)
     def run():
         x = 0
         for i in range(iters):
@@ -64,9 +68,10 @@ def bench_scalar_int(total_ops: int = 500_000) -> dict:
         return x
     run()
     dt = median_time(run)
-    return {"ops": iters*3, "time_s": dt}
+    return {"ops": iters*3, "time_s": dt} #Retorna o total de operações e o tempo. 
 
 # Mede desempenho do Python com números de ponto flutuante
+#Usado float e maior quantidade de operações. 
 def bench_scalar_float(total_ops: int = 5_000_000) -> dict:
     a, b = 1.0, math.pi
     iters = total_ops // 3
@@ -81,6 +86,7 @@ def bench_scalar_float(total_ops: int = 5_000_000) -> dict:
     return {"ops": iters*3, "time_s": dt}
 
 # Mede desempenho em multiplicação de matrizes com float (GEMM)
+#GEMM: Multiplicação geral de matrizes
 def bench_gemm(n: int, dtype=np.float64) -> dict:
     A = np.random.rand(n, n).astype(dtype)
     B = np.random.rand(n, n).astype(dtype)
@@ -88,7 +94,7 @@ def bench_gemm(n: int, dtype=np.float64) -> dict:
     t0 = time.perf_counter()
     C = A @ B
     dt = time.perf_counter() - t0
-    flops = 2.0*(n**3)
+    flops = 2.0*(n**3) #mede o tempo exato da multilplicação real. 
     gflops = flops/dt/1e9
     return {"n": n, "dtype": str(dtype), "time_s": dt, "gflops": gflops}
 
@@ -96,7 +102,7 @@ def run_benchmark():
     rows = []
     print("\n=== Benchmark iniciado ===")
 
-    # scalar int
+    # (scalar int) executa os testes e mostra o resultado em operações por segundo
     print("-> Teste escalar (inteiro)")
     i = bench_scalar_int()
     rows.append({
@@ -116,7 +122,7 @@ def run_benchmark():
     })
     print("  Ops/s:", f["ops"]/f["time_s"])
 
-    # GEMM FLOAT64 — tamanhos menores e mais rápidos
+    # GEMM FLOAT64 — tamanhos menores e mais rápidos (2048x2048 e 4096x4096)
     for n in (2048, 4096):
         print(f"-> GEMM: n={n}, dtype=float64")
         r = bench_gemm(n=n)
@@ -128,7 +134,7 @@ def run_benchmark():
         print(f"   {r['gflops']:.2f} GFLOPS, time={r['time_s']:.3f}s")
 
     write_rows(rows)
-    print("[OK] Benchmark salvo em:", OUT_CSV)
+    print("Benchmark salvo em:", OUT_CSV)
 
 if __name__ == "__main__":
     run_benchmark()
